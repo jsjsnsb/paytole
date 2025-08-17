@@ -1,33 +1,36 @@
-// GigaPub ကြော်ငြာ Integration
+// Ad integration for Giga Pub
+// This file handles the ad display and completion callbacks
 
-// ▶ Giga Ad ပြဖို့ Function
-async function runGigaAd() {
+// Show Giga Ad
+async function showGigaAd() {
     return new Promise((resolve, reject) => {
         try {
-            if (typeof window.showGiga === "undefined") {
-                reject(new Error("Ad service မရရှိသေးပါ"));
+            // Check if Giga ad script is loaded
+            if (typeof window.showGiga === 'undefined') {
+                reject(new Error('Ad service not available'));
                 return;
             }
 
-            // GigaPub SDK ထဲက showGiga ကို ခေါ်
+            // Show the ad
             window.showGiga()
                 .then(() => {
-                    console.log("Ad ပြီးပါပြီ ✅");
-                    if (typeof onAdCompleted === "function") {
+                    console.log('Ad completed successfully');
+                    if (typeof onAdCompleted === 'function') {
                         onAdCompleted();
                     }
                     resolve();
                 })
                 .catch((error) => {
-                    console.error("Ad error:", error);
-                    if (typeof onAdFailed === "function") {
+                    console.error('Ad error:', error);
+                    if (typeof onAdFailed === 'function') {
                         onAdFailed(error);
                     }
                     reject(error);
                 });
+
         } catch (error) {
-            console.error("Ad service error:", error);
-            if (typeof onAdFailed === "function") {
+            console.error('Ad service error:', error);
+            if (typeof onAdFailed === 'function') {
                 onAdFailed(error);
             }
             reject(error);
@@ -35,48 +38,45 @@ async function runGigaAd() {
     });
 }
 
-// ▶ ကြော်ငြာ Provider များ (fallback အတွက် ပြင်ဆင်ထား)
+// Alternative ad providers (backup)
 const adProviders = {
     giga: {
-        name: "Giga Pub",
-        show: runGigaAd,
+        name: 'Giga Pub',
+        show: showGigaAd
     },
-    // နောက်ထပ် Provider တို့ ထပ်ထည့်လို့ရမယ်
+    // Add more ad providers here if needed
 };
 
-// ▶ ကြော်ငြာ ပြဖို့ Main Function
-async function showAd(provider = "giga") {
+// Main ad display function with fallback
+async function showAd(provider = 'giga') {
     try {
         const adProvider = adProviders[provider];
         if (!adProvider) {
-            throw new Error("မမှန်တဲ့ provider သုံးထားတယ်");
+            throw new Error('Invalid ad provider');
         }
 
         await adProvider.show();
+
     } catch (error) {
-        console.error("Ad ပြမရပါ ❌:", error);
+        console.error('Failed to show ad:', error);
 
-        // Fail ဖြစ်ရင် UI Reset
-        if (typeof onAdFailed === "function") {
-            onAdFailed(error);
-        }
-
-        // Fallback
-        if (provider === "giga") {
-            showToast("Ad service မရရှိသေးပါ", "error");
+        if (provider === 'giga') {
+            if (typeof showToast === 'function') {
+                showToast('Ad service temporarily unavailable', 'error');
+            }
         }
 
         throw error;
     }
 }
 
-// ▶ Ad Blocker ရှိမရှိ စစ်
+// Check if ad blocker is present
 function detectAdBlocker() {
-    const testAd = document.createElement("div");
-    testAd.innerHTML = "&nbsp;";
-    testAd.className = "adsbox";
-    testAd.style.position = "absolute";
-    testAd.style.left = "-10000px";
+    const testAd = document.createElement('div');
+    testAd.innerHTML = '&nbsp;';
+    testAd.className = 'adsbox';
+    testAd.style.position = 'absolute';
+    testAd.style.left = '-10000px';
     document.body.appendChild(testAd);
 
     const isBlocked = testAd.offsetHeight === 0;
@@ -85,33 +85,31 @@ function detectAdBlocker() {
     return isBlocked;
 }
 
-// ▶ Ad System Initialize
-function initializeAdSystem(retries = 0) {
+// Initialize ad system
+function initializeAdSystem() {
     if (detectAdBlocker()) {
-        console.warn("Ad blocker ရှိတယ် ❌");
-        showToast("Coin ဝင်ချင်ရင် Ad blocker ပိတ်ပါ", "warning");
-        return false;
-    }
-
-    if (typeof window.showGiga === "undefined") {
-        if (retries < 10) { // အများဆုံး 10 ကြိမ်ပဲ retry လုပ်မယ်
-            console.warn("Ad service မ load ရသေး… ပြန်စမ်းမယ်");
-            setTimeout(() => initializeAdSystem(retries + 1), 1000);
-        } else {
-            console.error("Ad service မ load ရတာ 10 ကြိမ်ကျော်သွားပြီ ❌");
+        console.warn('Ad blocker detected');
+        if (typeof showToast === 'function') {
+            showToast('Please disable ad blocker to earn coins', 'warning');
         }
         return false;
     }
 
-    console.log("Ad system စတင်ဖို့ အောင်မြင် ✅");
+    if (typeof window.showGiga === 'undefined') {
+        console.warn('Ad service not loaded yet...');
+        setTimeout(initializeAdSystem, 1000);
+        return false;
+    }
+
+    console.log('Ad system initialized successfully');
     return true;
 }
 
-// ▶ Page load အပြီး initialize
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(() => initializeAdSystem(), 2000);
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initializeAdSystem, 2000);
 });
 
-// ▶ Export (SDK နဲ့ မတိုက်ဖို့ အမည်သစ်သုံး)
-window.runGigaAd = runGigaAd;
+// Export functions
+window.showGigaAd = showGigaAd;
 window.showAd = showAd;
