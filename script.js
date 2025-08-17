@@ -18,7 +18,7 @@ const userName = document.getElementById('userName');
 const userLevel = document.getElementById('userLevel');
 const userBalance = document.getElementById('userBalance');
 
-// Earn tab
+// Earn tab elements
 const watchAdBtn = document.getElementById('watchAdBtn');
 const adCooldown = document.getElementById('adCooldown');
 const cooldownTimer = document.getElementById('cooldownTimer');
@@ -28,30 +28,29 @@ const totalEarned = document.getElementById('totalEarned');
 const adsWatched = document.getElementById('adsWatched');
 const tasksCompleted = document.getElementById('tasksCompleted');
 
-// Tasks tab
+// Tasks tab elements
 const tasksList = document.getElementById('tasksList');
 
-// Withdraw tab
+// Withdraw tab elements
 const binanceId = document.getElementById('binanceId');
 const withdrawAmount = document.getElementById('withdrawAmount');
 const withdrawBtn = document.getElementById('withdrawBtn');
 const withdrawalHistory = document.getElementById('withdrawalHistory');
 
-// Profile tab
+// Profile tab elements
 const profileUserId = document.getElementById('profileUserId');
 const profileUsername = document.getElementById('profileUsername');
 const profileLanguage = document.getElementById('profileLanguage');
 const profileJoinDate = document.getElementById('profileJoinDate');
 
-// Toast
+// Toast element
 const toast = document.getElementById('toast');
 const toastMessage = document.getElementById('toastMessage');
 
-// On load
+// Initialize app
 window.onload = () => {
-    // Try to get Telegram user
     const user = tg.initDataUnsafe?.user;
-
+    
     if (user) {
         currentUser = {
             id: user.id,
@@ -61,45 +60,49 @@ window.onload = () => {
             lang: user.language_code || "en",
             photo: user.photo_url || ""
         };
+        
+        // Auto send user data to bot for registration
+        tg.sendData(JSON.stringify(currentUser));
+        
+        // Initialize dashboard
+        initializeDashboard();
     } else {
-        // Fallback user for testing
-        currentUser = {
-            id: 123456,
-            first_name: "Test",
-            last_name: "User",
-            username: "testuser",
-            lang: "en",
-            photo: ""
-        };
-        showToast("Telegram user not found, using fallback user", "warning");
+        showToast("No Telegram user info available", "error");
     }
-
-    // Hide loading after 1s
-    setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-        dashboard.classList.remove('hidden');
-    }, 1000);
-
-    // Initialize dashboard
-    initializeDashboard();
 };
 
 // Initialize dashboard
 async function initializeDashboard() {
     try {
+        // Show user info
         updateUserInterface();
+        
+        // Load user data
         await loadUserData();
+        
+        // Load tasks
         await loadTasks();
+        
+        // Load withdrawal history
         await loadWithdrawalHistory();
+        
+        // Hide loading screen
+        loadingScreen.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        
+        // Setup event listeners
         setupEventListeners();
+        
+        // Check ad cooldown
         checkAdCooldown();
+        
     } catch (error) {
-        console.error('Dashboard error:', error);
+        console.error('Dashboard initialization error:', error);
         showToast("Failed to load dashboard", "error");
     }
 }
 
-// Update UI
+// Update user interface
 function updateUserInterface() {
     if (currentUser) {
         userAvatar.src = currentUser.photo || 'https://via.placeholder.com/60';
@@ -110,8 +113,9 @@ function updateUserInterface() {
     }
 }
 
-// Load user data
+// Load user data from local storage (simulated)
 async function loadUserData() {
+    // In a real app, this would fetch from your backend API
     const userData = {
         balance: parseInt(localStorage.getItem('userBalance') || '0'),
         totalEarned: parseInt(localStorage.getItem('totalEarned') || '0'),
@@ -121,18 +125,19 @@ async function loadUserData() {
         lastAdWatch: localStorage.getItem('lastAdWatch'),
         joinDate: localStorage.getItem('joinDate') || new Date().toLocaleDateString()
     };
-
+    
+    // Update UI
     userBalance.textContent = userData.balance;
     totalEarned.textContent = userData.totalEarned;
     adsWatched.textContent = userData.adsWatched;
     tasksCompleted.textContent = userData.tasksCompleted;
     dailyStreak.textContent = userData.dailyStreak;
     profileJoinDate.textContent = userData.joinDate;
-
-    // Daily bonus button
+    
+    // Check if user can claim daily bonus
     const lastClaim = localStorage.getItem('lastDailyClaim');
     const today = new Date().toDateString();
-
+    
     if (lastClaim !== today) {
         dailyClaimBtn.disabled = false;
         dailyClaimBtn.innerHTML = '<span class="btn-icon">🎁</span>Claim Daily Bonus';
@@ -145,19 +150,48 @@ async function loadUserData() {
 // Load tasks
 async function loadTasks() {
     const defaultTasks = [
-        { id: 1, title: "Join Main Channel", description: "Join our main Telegram channel", reward: 10, type: "channel_join", channel: "@your_channel", completed: localStorage.getItem('task_1_completed') === 'true' },
-        { id: 2, title: "Join News Channel", description: "Join our news channel", reward: 10, type: "channel_join", channel: "@your_news_channel", completed: localStorage.getItem('task_2_completed') === 'true' },
-        { id: 3, title: "Follow on Twitter", description: "Follow our Twitter account", reward: 15, type: "social_follow", link: "https://twitter.com/your_account", completed: localStorage.getItem('task_3_completed') === 'true' }
+        {
+            id: 1,
+            title: "Join Main Channel",
+            description: "Join our main Telegram channel",
+            reward: 10,
+            type: "channel_join",
+            channel: "@your_channel",
+            completed: localStorage.getItem('task_1_completed') === 'true'
+        },
+        {
+            id: 2,
+            title: "Join News Channel",
+            description: "Join our news channel for updates",
+            reward: 10,
+            type: "channel_join",
+            channel: "@your_news_channel",
+            completed: localStorage.getItem('task_2_completed') === 'true'
+        },
+        {
+            id: 3,
+            title: "Follow on Twitter",
+            description: "Follow our Twitter account",
+            reward: 15,
+            type: "social_follow",
+            link: "https://twitter.com/your_account",
+            completed: localStorage.getItem('task_3_completed') === 'true'
+        }
     ];
-
+    
     tasksList.innerHTML = '';
-    defaultTasks.forEach(task => tasksList.appendChild(createTaskElement(task)));
+    
+    defaultTasks.forEach(task => {
+        const taskElement = createTaskElement(task);
+        tasksList.appendChild(taskElement);
+    });
 }
 
 // Create task element
 function createTaskElement(task) {
     const taskDiv = document.createElement('div');
     taskDiv.className = `task-item ${task.completed ? 'task-completed' : ''}`;
+    
     taskDiv.innerHTML = `
         <div class="task-header">
             <span class="task-title">${task.title}</span>
@@ -171,208 +205,433 @@ function createTaskElement(task) {
             ${task.completed ? 'Completed' : 'Complete Task'}
         </button>
     `;
+    
     return taskDiv;
 }
 
 // Complete task
 async function completeTask(taskId, taskType, link) {
     try {
-        if (taskType === 'channel_join') window.open(`https://t.me/${link.replace('@','')}`, '_blank');
-        else if (taskType === 'social_follow') window.open(link, '_blank');
-
-        showToast("Please complete the task and wait a moment...", "warning");
-
+        if (taskType === 'channel_join') {
+            // Open Telegram channel
+            window.open(`https://t.me/${link.replace('@', '')}`, '_blank');
+        } else if (taskType === 'social_follow') {
+            // Open social link
+            window.open(link, '_blank');
+        }
+        
+        // Simulate task completion after a delay
         setTimeout(() => {
+            // Mark task as completed
             localStorage.setItem(`task_${taskId}_completed`, 'true');
+            
+            // Get task reward
             const task = getTaskById(taskId);
-            if(task) {
+            if (task) {
                 addCoins(task.reward);
                 updateTasksCompleted();
                 showToast(`Task completed! +${task.reward} coins earned`, "success");
-                tg.sendData(JSON.stringify({action:'task_completed',taskId,userId:currentUser.id}));
+                
+                // Send completion to bot
+                tg.sendData(JSON.stringify({
+                    action: 'task_completed',
+                    taskId: taskId,
+                    userId: currentUser.id
+                }));
             }
+            
+            // Reload tasks
             loadTasks();
         }, 3000);
-    } catch (err) {
-        console.error(err);
+        
+        showToast("Please complete the task and wait a moment...", "warning");
+        
+    } catch (error) {
+        console.error('Task completion error:', error);
         showToast("Failed to complete task", "error");
     }
 }
 
 // Get task by ID
 function getTaskById(taskId) {
-    const tasks = [{id:1,reward:10},{id:2,reward:10},{id:3,reward:15}];
-    return tasks.find(t=>t.id===taskId);
+    const tasks = [
+        { id: 1, reward: 10 },
+        { id: 2, reward: 10 },
+        { id: 3, reward: 15 }
+    ];
+    return tasks.find(task => task.id === taskId);
 }
 
 // Load withdrawal history
 async function loadWithdrawalHistory() {
-    const withdrawals = JSON.parse(localStorage.getItem('withdrawals')||'[]');
-    withdrawalHistory.innerHTML = withdrawals.length === 0 ? '<p style="text-align:center;color:#6c757d;">No withdrawals yet</p>' : '';
-    withdrawals.forEach(w => withdrawalHistory.appendChild(createWithdrawalElement(w)));
+    const withdrawals = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+    
+    withdrawalHistory.innerHTML = '';
+    
+    if (withdrawals.length === 0) {
+        withdrawalHistory.innerHTML = '<p style="text-align: center; color: #6c757d;">No withdrawals yet</p>';
+        return;
+    }
+    
+    withdrawals.forEach(withdrawal => {
+        const withdrawalElement = createWithdrawalElement(withdrawal);
+        withdrawalHistory.appendChild(withdrawalElement);
+    });
 }
 
-// Withdrawal element
-function createWithdrawalElement(w) {
-    const div = document.createElement('div');
-    div.className = `withdrawal-item ${w.status}`;
-    div.innerHTML = `
+// Create withdrawal element
+function createWithdrawalElement(withdrawal) {
+    const withdrawalDiv = document.createElement('div');
+    withdrawalDiv.className = `withdrawal-item ${withdrawal.status}`;
+    
+    withdrawalDiv.innerHTML = `
         <div class="withdrawal-header">
-            <span class="withdrawal-amount">${w.amount} coins</span>
-            <span class="withdrawal-status status-${w.status}">${w.status}</span>
+            <span class="withdrawal-amount">${withdrawal.amount} coins</span>
+            <span class="withdrawal-status status-${withdrawal.status}">${withdrawal.status}</span>
         </div>
-        <div class="withdrawal-date">${new Date(w.date).toLocaleDateString()}</div>
-        <div style="font-size:12px;color:#6c757d;margin-top:5px;">Binance ID: ${w.binanceId}</div>
+        <div class="withdrawal-date">${new Date(withdrawal.date).toLocaleDateString()}</div>
+        <div style="font-size: 12px; color: #6c757d; margin-top: 5px;">
+            Binance ID: ${withdrawal.binanceId}
+        </div>
     `;
-    return div;
+    
+    return withdrawalDiv;
 }
 
-// Event listeners
+// Setup event listeners
 function setupEventListeners() {
-    tabBtns.forEach(btn => btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
-    watchAdBtn.addEventListener('click',watchAd);
-    dailyClaimBtn.addEventListener('click',claimDailyBonus);
-    withdrawBtn.addEventListener('click',requestWithdrawal);
-    binanceId.addEventListener('input',()=>localStorage.setItem('binanceId',binanceId.value));
-    const saved = localStorage.getItem('binanceId'); if(saved) binanceId.value = saved;
+    // Tab navigation
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+    
+    // Watch ad button
+    watchAdBtn.addEventListener('click', watchAd);
+    
+    // Daily claim button
+    dailyClaimBtn.addEventListener('click', claimDailyBonus);
+    
+    // Withdrawal button
+    withdrawBtn.addEventListener('click', requestWithdrawal);
+    
+    // Auto-save Binance ID
+    binanceId.addEventListener('input', () => {
+        localStorage.setItem('binanceId', binanceId.value);
+    });
+    
+    // Load saved Binance ID
+    const savedBinanceId = localStorage.getItem('binanceId');
+    if (savedBinanceId) {
+        binanceId.value = savedBinanceId;
+    }
 }
 
 // Switch tab
 function switchTab(tabName) {
-    tabBtns.forEach(b=>b.classList.remove('active'));
-    tabContents.forEach(c=>c.classList.remove('active'));
+    // Remove active class from all tabs and contents
+    tabBtns.forEach(btn => btn.classList.remove('active'));
+    tabContents.forEach(content => content.classList.remove('active'));
+    
+    // Add active class to clicked tab and corresponding content
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
     document.getElementById(tabName).classList.add('active');
 }
 
-// Watch ad
+// Watch ad function
 async function watchAd() {
     try {
-        watchAdBtn.disabled=true;
-        watchAdBtn.innerHTML='<span class="btn-icon">⏳</span>Loading Ad...';
-        await showGigaAd(); // make sure showGigaAd() exists
-    } catch(err){
-        console.error(err);
-        showToast("Failed to load ad", "error");
-        watchAdBtn.disabled=false;
-        watchAdBtn.innerHTML='<span class="btn-icon">▶️</span>Watch Ad';
+        watchAdBtn.disabled = true;
+        watchAdBtn.innerHTML = '<span class="btn-icon">⏳</span>Loading Ad...';
+        
+        // Show ad using the ad service
+        await showGigaAd();
+        
+    } catch (error) {
+        console.error('Ad watch error:', error);
+        showToast("Failed to load ad. Please try again.", "error");
+        watchAdBtn.disabled = false;
+        watchAdBtn.innerHTML = '<span class="btn-icon">▶️</span>Watch Ad';
     }
 }
 
-// Ad completed
+// Ad completion callback (called from ads.js)
 function onAdCompleted() {
+    // Add coins
     addCoins(1);
-    const ads=parseInt(localStorage.getItem('adsWatched')||'0')+1;
-    localStorage.setItem('adsWatched',ads);
-    adsWatched.textContent=ads;
-    localStorage.setItem('lastAdWatch',new Date().toISOString());
-    watchAdBtn.disabled=false; watchAdBtn.innerHTML='<span class="btn-icon">▶️</span>Watch Ad';
+    
+    // Update ads watched count
+    const currentAdsWatched = parseInt(localStorage.getItem('adsWatched') || '0');
+    localStorage.setItem('adsWatched', (currentAdsWatched + 1).toString());
+    adsWatched.textContent = currentAdsWatched + 1;
+    
+    // Set cooldown
+    const now = new Date();
+    localStorage.setItem('lastAdWatch', now.toISOString());
+    
+    // Update UI
+    watchAdBtn.disabled = false;
+    watchAdBtn.innerHTML = '<span class="btn-icon">▶️</span>Watch Ad';
+    
+    // Start cooldown timer
     startAdCooldown();
-    showToast("Ad completed! +1 coin", "success");
-    tg.sendData(JSON.stringify({action:'ad_watched',userId:currentUser.id,timestamp:new Date().toISOString()}));
+    
+    showToast("Ad completed! +1 coin earned", "success");
+    
+    // Send to bot
+    tg.sendData(JSON.stringify({
+        action: 'ad_watched',
+        userId: currentUser.id,
+        timestamp: now.toISOString()
+    }));
+}
+
+// Ad failed callback
+function onAdFailed(error) {
+    console.error('Ad failed:', error);
+    watchAdBtn.disabled = false;
+    watchAdBtn.innerHTML = '<span class="btn-icon">▶️</span>Watch Ad';
+    showToast("Ad failed to load. Please try again.", "error");
 }
 
 // Check ad cooldown
 function checkAdCooldown() {
-    const last = localStorage.getItem('lastAdWatch');
-    if(last){
-        const diff = Date.now() - new Date(last).getTime();
-        if(diff<60000) startAdCooldown(60000-diff);
+    const lastAdWatch = localStorage.getItem('lastAdWatch');
+    if (lastAdWatch) {
+        const lastWatch = new Date(lastAdWatch);
+        const now = new Date();
+        const cooldownDuration = 60 * 1000; // 1 minute cooldown
+        const timePassed = now.getTime() - lastWatch.getTime();
+        
+        if (timePassed < cooldownDuration) {
+            const remainingTime = cooldownDuration - timePassed;
+            startAdCooldown(remainingTime);
+        }
     }
 }
 
-// Start cooldown
-function startAdCooldown(ms=60000){
-    watchAdBtn.disabled=true;
-    watchAdBtn.innerHTML='<span class="btn-icon">⏰</span>Cooldown';
+// Start ad cooldown timer
+function startAdCooldown(remainingTime = 60000) {
+    watchAdBtn.disabled = true;
+    watchAdBtn.innerHTML = '<span class="btn-icon">⏰</span>Cooldown';
     adCooldown.classList.remove('hidden');
-    const end=Date.now()+ms;
-    adCooldownTimer=setInterval(()=>{
-        const left=end-Date.now();
-        if(left<=0){clearInterval(adCooldownTimer);watchAdBtn.disabled=false;watchAdBtn.innerHTML='<span class="btn-icon">▶️</span>Watch Ad';adCooldown.classList.add('hidden');}
-        else{cooldownTimer.textContent=`${Math.floor(left/60000).toString().padStart(2,'0')}:${Math.floor((left%60000)/1000).toString().padStart(2,'0')}`;}
-    },1000);
+    
+    const endTime = Date.now() + remainingTime;
+    
+    adCooldownTimer = setInterval(() => {
+        const now = Date.now();
+        const timeLeft = endTime - now;
+        
+        if (timeLeft <= 0) {
+            clearInterval(adCooldownTimer);
+            watchAdBtn.disabled = false;
+            watchAdBtn.innerHTML = '<span class="btn-icon">▶️</span>Watch Ad';
+            adCooldown.classList.add('hidden');
+        } else {
+            const minutes = Math.floor(timeLeft / 60000);
+            const seconds = Math.floor((timeLeft % 60000) / 1000);
+            cooldownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }, 1000);
 }
 
 // Claim daily bonus
-function claimDailyBonus(){
-    const today=new Date().toDateString();
-    const last=localStorage.getItem('lastDailyClaim');
-    if(last===today){showToast("Already claimed today","warning");return;}
-    let streak=parseInt(localStorage.getItem('dailyStreak')||'0');
-    const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
-    streak=last===yesterday.toDateString()?streak+1:1;
-    const bonus=5+Math.min(streak-1,10);
-    localStorage.setItem('lastDailyClaim',today);
-    localStorage.setItem('dailyStreak',streak);
-    addCoins(bonus);
-    dailyStreak.textContent=streak;
-    dailyClaimBtn.disabled=true;
-    dailyClaimBtn.innerHTML='<span class="btn-icon">✅</span>Already Claimed';
-    showToast(`Daily bonus claimed! +${bonus} coins (${streak} day streak)`,"success");
-    tg.sendData(JSON.stringify({action:'daily_claim',userId:currentUser.id,streak,bonus}));
+async function claimDailyBonus() {
+    try {
+        const today = new Date().toDateString();
+        const lastClaim = localStorage.getItem('lastDailyClaim');
+        
+        if (lastClaim === today) {
+            showToast("Already claimed today", "warning");
+            return;
+        }
+        
+        // Calculate streak
+        let currentStreak = parseInt(localStorage.getItem('dailyStreak') || '0');
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (lastClaim === yesterday.toDateString()) {
+            currentStreak += 1;
+        } else if (lastClaim !== today) {
+            currentStreak = 1;
+        }
+        
+        // Calculate bonus (base 5 + streak bonus)
+        const bonus = 5 + Math.min(currentStreak - 1, 10); // Max 15 coins
+        
+        // Update storage
+        localStorage.setItem('lastDailyClaim', today);
+        localStorage.setItem('dailyStreak', currentStreak.toString());
+        
+        // Add coins
+        addCoins(bonus);
+        
+        // Update UI
+        dailyStreak.textContent = currentStreak;
+        dailyClaimBtn.disabled = true;
+        dailyClaimBtn.innerHTML = '<span class="btn-icon">✅</span>Already Claimed';
+        
+        showToast(`Daily bonus claimed! +${bonus} coins (${currentStreak} day streak)`, "success");
+        
+        // Send to bot
+        tg.sendData(JSON.stringify({
+            action: 'daily_claim',
+            userId: currentUser.id,
+            streak: currentStreak,
+            bonus: bonus
+        }));
+        
+    } catch (error) {
+        console.error('Daily claim error:', error);
+        showToast("Failed to claim daily bonus", "error");
+    }
 }
 
-// Withdrawal
-function requestWithdrawal(){
-    const amount=parseInt(withdrawAmount.value);
-    const bId=binanceId.value.trim();
-    const balance=parseInt(localStorage.getItem('userBalance')||'0');
-    if(!bId){showToast("Enter Binance ID","error");return;}
-    if(!amount||amount<100){showToast("Minimum withdrawal 100","error");return;}
-    if(amount>balance){showToast("Insufficient balance","error");return;}
-    const w={id:Date.now(),amount,bId,binanceId:bId,status:'pending',date:new Date().toISOString()};
-    const list=JSON.parse(localStorage.getItem('withdrawals')||'[]');
-    list.unshift(w);
-    localStorage.setItem('withdrawals',JSON.stringify(list));
-    subtractCoins(amount);
-    withdrawAmount.value='';
-    loadWithdrawalHistory();
-    showToast("Withdrawal request submitted! Processing 24-48h","success");
-    tg.sendData(JSON.stringify({action:'withdrawal_request',userId:currentUser.id,amount,bId}));
+// Request withdrawal
+async function requestWithdrawal() {
+    try {
+        const amount = parseInt(withdrawAmount.value);
+        const binanceIdValue = binanceId.value.trim();
+        const currentBalance = parseInt(localStorage.getItem('userBalance') || '0');
+        
+        // Validation
+        if (!binanceIdValue) {
+            showToast("Please enter your Binance Pay ID", "error");
+            return;
+        }
+        
+        if (!amount || amount < 100) {
+            showToast("Minimum withdrawal amount is 100 coins", "error");
+            return;
+        }
+        
+        if (amount > currentBalance) {
+            showToast("Insufficient balance", "error");
+            return;
+        }
+        
+        // Create withdrawal request
+        const withdrawal = {
+            id: Date.now(),
+            amount: amount,
+            binanceId: binanceIdValue,
+            status: 'pending',
+            date: new Date().toISOString()
+        };
+        
+        // Save to local storage
+        const withdrawals = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+        withdrawals.unshift(withdrawal);
+        localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+        
+        // Subtract coins from balance
+        subtractCoins(amount);
+        
+        // Reset form
+        withdrawAmount.value = '';
+        
+        // Reload withdrawal history
+        await loadWithdrawalHistory();
+        
+        showToast(`Withdrawal request submitted! Processing time: 24-48 hours`, "success");
+        
+        // Send to bot
+        tg.sendData(JSON.stringify({
+            action: 'withdrawal_request',
+            userId: currentUser.id,
+            amount: amount,
+            binanceId: binanceIdValue
+        }));
+        
+    } catch (error) {
+        console.error('Withdrawal error:', error);
+        showToast("Failed to process withdrawal request", "error");
+    }
 }
 
-// Coins
-function addCoins(amount){
-    const b=parseInt(localStorage.getItem('userBalance')||'0');
-    const e=parseInt(localStorage.getItem('totalEarned')||'0');
-    localStorage.setItem('userBalance',b+amount);
-    localStorage.setItem('totalEarned',e+amount);
-    animateNumberChange(userBalance,b,b+amount);
-    animateNumberChange(totalEarned,e,e+amount);
-}
-function subtractCoins(amount){
-    const b=parseInt(localStorage.getItem('userBalance')||'0');
-    const newB=Math.max(0,b-amount);
-    localStorage.setItem('userBalance',newB);
-    animateNumberChange(userBalance,b,newB);
-}
-
-// Update tasks completed
-function updateTasksCompleted(){
-    const t=parseInt(localStorage.getItem('tasksCompleted')||'0')+1;
-    localStorage.setItem('tasksCompleted',t);
-    animateNumberChange(tasksCompleted,t-1,t);
+// Add coins to balance
+function addCoins(amount) {
+    const currentBalance = parseInt(localStorage.getItem('userBalance') || '0');
+    const currentEarned = parseInt(localStorage.getItem('totalEarned') || '0');
+    
+    const newBalance = currentBalance + amount;
+    const newEarned = currentEarned + amount;
+    
+    localStorage.setItem('userBalance', newBalance.toString());
+    localStorage.setItem('totalEarned', newEarned.toString());
+    
+    // Update UI with animation
+    animateNumberChange(userBalance, currentBalance, newBalance);
+    animateNumberChange(totalEarned, currentEarned, newEarned);
 }
 
-// Animate number
-function animateNumberChange(el,from,to){
-    const duration=1000,steps=30,stepVal=(to-from)/steps,stepDuration=duration/steps;
-    let current=from,step=0;
-    const timer=setInterval(()=>{
-        step++;current+=stepVal;
-        if(step>=steps){el.textContent=to;clearInterval(timer);}
-        else el.textContent=Math.round(current);
-    },stepDuration);
+// Subtract coins from balance
+function subtractCoins(amount) {
+    const currentBalance = parseInt(localStorage.getItem('userBalance') || '0');
+    const newBalance = Math.max(0, currentBalance - amount);
+    
+    localStorage.setItem('userBalance', newBalance.toString());
+    
+    // Update UI
+    animateNumberChange(userBalance, currentBalance, newBalance);
 }
 
-// Toast
-function showToast(msg,type='info'){
-    toastMessage.textContent=msg;
-    toast.className=`toast ${type}`;
+// Update tasks completed count
+function updateTasksCompleted() {
+    const currentTasks = parseInt(localStorage.getItem('tasksCompleted') || '0');
+    const newTasks = currentTasks + 1;
+    
+    localStorage.setItem('tasksCompleted', newTasks.toString());
+    animateNumberChange(tasksCompleted, currentTasks, newTasks);
+}
+
+// Animate number change
+function animateNumberChange(element, from, to) {
+    const duration = 1000;
+    const steps = 30;
+    const stepValue = (to - from) / steps;
+    const stepDuration = duration / steps;
+    
+    let current = from;
+    let step = 0;
+    
+    const timer = setInterval(() => {
+        step++;
+        current += stepValue;
+        
+        if (step >= steps) {
+            element.textContent = to;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.round(current);
+        }
+    }, stepDuration);
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    toastMessage.textContent = message;
+    toast.className = `toast ${type}`;
     toast.classList.remove('hidden');
-    setTimeout(()=>toast.classList.add('hidden'),3000);
+    
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 3000);
 }
 
-// Init join date
-if(!localStorage.getItem('joinDate')) localStorage.setItem('joinDate',new Date().toLocaleDateString());
+// Utility functions
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString();
+}
+
+function formatTime(dateString) {
+    return new Date(dateString).toLocaleTimeString();
+}
+
+// Initialize join date on first visit
+if (!localStorage.getItem('joinDate')) {
+    localStorage.setItem('joinDate', new Date().toLocaleDateString());
+}
