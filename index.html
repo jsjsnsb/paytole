@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earning Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://ad.gigapub.tech/script?id=1594"></script>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="loader"></div>
+        <p>Loading Dashboard...</p>
+    </div>
+
+    <div id="dashboard" class="dashboard hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="profile-section">
+                <img id="userAvatar" class="avatar" src="https://via.placeholder.com/60" alt="Avatar">
+                <div class="user-info">
+                    <h2 id="userName">Loading...</h2>
+                    <p id="userLevel">Level 1</p>
+                </div>
+            </div>
+            <div class="balance-section">
+                <div class="balance">
+                    <span class="coin-icon">🪙</span>
+                    <span id="userBalance">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="earn">💰 Earn</button>
+            <button class="tab-btn" data-tab="tasks">📋 Tasks</button>
+            <button class="tab-btn" data-tab="withdraw">💳 Withdraw</button>
+            <button class="tab-btn" data-tab="profile">👤 Profile</button>
+        </nav>
+
+        <!-- Earn Tab -->
+        <div id="earn" class="tab-content active">
+            <div class="section">
+                <h3>🎬 Watch Ads</h3>
+                <p>Earn 1 coin per ad watched</p>
+                <button id="watchAdBtn" class="btn btn-primary">
+                    <span class="btn-icon">▶️</span>
+                    Watch Ad
+                </button>
+                <div id="adCooldown" class="cooldown hidden">
+                    <p>⏰ Next ad available in: <span id="cooldownTimer">00:00</span></p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📅 Daily Check-in</h3>
+                <p>Claim your daily bonus</p>
+                <div id="dailyStatus" class="daily-status">
+                    <div class="streak-info">
+                        <span>🔥 Streak: <span id="dailyStreak">0</span> days</span>
+                    </div>
+                    <button id="dailyClaimBtn" class="btn btn-secondary">
+                        <span class="btn-icon">🎁</span>
+                        Claim Daily Bonus
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>📊 Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Earned</span>
+                        <span class="stat-value" id="totalEarned">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Ads Watched</span>
+                        <span class="stat-value" id="adsWatched">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tasks Completed</span>
+                        <span class="stat-value" id="tasksCompleted">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div id="tasks" class="tab-content">
+            <div class="section">
+                <h3>📋 Available Tasks</h3>
+                <div id="tasksList" class="tasks-list">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdraw Tab -->
+        <div id="withdraw" class="tab-content">
+            <div class="section">
+                <h3>💳 Withdraw Coins</h3>
+                <p>Minimum withdrawal: 100 coins</p>
+                
+                <div class="withdraw-form">
+                    <div class="input-group">
+                        <label for="binanceId">Binance Pay ID:</label>
+                        <input type="text" id="binanceId" placeholder="Enter your Binance Pay ID" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="withdrawAmount">Amount (coins):</label>
+                        <input type="number" id="withdrawAmount" min="100" placeholder="100" required>
+                    </div>
+                    
+                    <button id="withdrawBtn" class="btn btn-warning">
+                        <span class="btn-icon">💸</span>
+                        Request Withdrawal
+                    </button>
+                </div>
+
+                <div class="section">
+                    <h4>📋 Withdrawal History</h4>
+                    <div id="withdrawalHistory" class="withdrawal-history">
+                        <!-- Withdrawal history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profile" class="tab-content">
+            <div class="section">
+                <h3>👤 Profile Information</h3>
+                <div class="profile-info">
+                    <div class="info-row">
+                        <span class="info-label">User ID:</span>
+                        <span class="info-value" id="profileUserId">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Username:</span>
+                        <span class="info-value" id="profileUsername">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Language:</span>
+                        <span class="info-value" id="profileLanguage">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Member Since:</span>
+                        <span class="info-value" id="profileJoinDate">-</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h4>🏆 Achievements</h4>
+                    <div class="achievements">
+                        <div class="achievement">
+                            <span class="achievement-icon">🎬</span>
+                            <span class="achievement-text">First Ad Watched</span>
+                        </div>
+                        <div class="achievement">
+                            <span class="achievement-icon">📅</span>
+                            <span class="achievement-text">7 Day Streak</span>
+                        </div>
+                        <div class="achievement">
+                            <span class="achievement-icon">💰</span>
+                            <span class="achievement-text">100 Coins Earned</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast hidden">
+        <span id="toastMessage"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script src="ads.js"></script>
+</body>
+</html>
